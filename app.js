@@ -97,7 +97,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'pecommerce8@gmail.com',
-    pass: 'tnyfvsshiizbget'
+    pass: 'rqrdabxuzpaecigz'
   }
 });
 
@@ -108,7 +108,36 @@ const sendConfirmationEmail = async (email, complaintNumber, message) => {
       from: 'pecommerce8@gmail.com',
       to: email,
       subject: 'Complaint Registration Confirmation',
-      text: `Your complaint ID is: ${complaintNumber}\n\nThe issue faced by you is: ${message}\n\nWe will be resolving your issue shortly and you will receive a reply to your query within 24 hours by hands-on experience specialist.`
+      html: `
+        <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px; background-color: #ffffff;">
+  <!-- Stylish Header -->
+  <div style="background-color: #ffb6c1; padding: 15px; border-radius: 10px 10px 0 0; text-align: center;">
+    <h1 style="font-family: 'Brush Script MT', cursive; color: #ffffff; font-size: 36px; margin: 0;">Mera Bestie</h1>
+  </div>
+  
+  <!-- Main Content -->
+  <div style="padding: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Complaint Registration Confirmation</h2>
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+      <p style="margin: 10px 0;"><strong>Complaint ID:</strong> ${complaintNumber}</p>
+      <p style="margin: 10px 0;"><strong>Issue Description:</strong></p>
+      <p style="margin: 10px 0; font-style: italic; color: #555;">${message}</p>
+    </div>
+    <p style="color: #7f8c8d; font-size: 16px; line-height: 1.5;">
+      Thank you for reaching out to us! Our experienced specialists are already working on resolving your issue. You can expect a detailed reply to your query within 24 hours. We appreciate your patience and understanding.
+    </p>
+  </div>
+  
+  <!-- Footer -->
+  <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+    <p style="color: #95a5a6; font-size: 12px; line-height: 1.4;">
+      This is an automated email. Please do not reply to this message.<br>
+      If you have any additional questions, feel free to contact our support team.
+    </p>
+  </div>
+</div>
+
+      `
     };
 
     await transporter.sendMail(mailOptions);
