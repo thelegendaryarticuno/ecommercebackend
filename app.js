@@ -28,6 +28,15 @@ const productSchema = new mongoose.Schema({
 
 const Product = mongoose.model('Product', productSchema);
 
+// Keep-Alive Route
+app.get('/keep-alive', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Server is up and running'
+  });
+});
+
+
 // Create Product Route
 app.post('/create-product', async (req, res) => {
   try {
