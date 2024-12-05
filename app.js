@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
 
 const app = express();
 
@@ -73,6 +74,9 @@ app.get('/get-product', async (req, res) => {
     });
   }
 });
+// Get Products with Generated IDs Route
+
+
 // Complaints Schema
 const complaintsSchema = new mongoose.Schema({
   complaintNumber: String,
@@ -87,6 +91,32 @@ const complaintsSchema = new mongoose.Schema({
 });
 
 const Complaint = mongoose.model('Complaint', complaintsSchema);
+
+// Configure nodemailer
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'pecommerce8@gmail.com',
+    pass: 'tnyfvsshiizbget'
+  }
+});
+
+// Function to send confirmation email
+const sendConfirmationEmail = async (email, complaintNumber, message) => {
+  try {
+    const mailOptions = {
+      from: 'pecommerce8@gmail.com',
+      to: email,
+      subject: 'Complaint Registration Confirmation',
+      text: `Your complaint ID is: ${complaintNumber}\n\nThe issue faced by you is: ${message}\n\nWe will be resolving your issue shortly and you will receive a reply to your query within 24 hours by hands-on experience specialist.`
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('Confirmation email sent successfully');
+  } catch (error) {
+    console.error('Error sending confirmation email:', error);
+  }
+};
 
 // Post Complaint Route
 app.post('/post-complaints', async (req, res) => {
@@ -107,6 +137,9 @@ app.post('/post-complaints', async (req, res) => {
     const complaint = new Complaint(complaintData);
     const result = await complaint.save();
 
+    // Send confirmation email
+    await sendConfirmationEmail(email, complaintNumber, message);
+
     res.status(201).json({
       success: true,
       message: 'Complaint registered successfully',
@@ -121,8 +154,6 @@ app.post('/post-complaints', async (req, res) => {
     });
   }
 });
-
-
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
