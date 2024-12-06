@@ -106,7 +106,7 @@ const sendConfirmationEmail = async (email, complaintNumber, message) => {
   try {
     const mailOptions = {
       from: 'pecommerce8@gmail.com',
-      to: email,
+      to: email, // This will send to whatever email is passed in
       subject: 'Complaint Registration Confirmation',
       html: `
         <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px; background-color: #ffffff;">
