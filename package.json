@@ -10,9 +10,16 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.3",
+    "connect-mongo": "^5.1.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "express": "^4.21.1",
-    "mongoose": "^8.8.3",
-    "nodemailer": "^6.9.16"
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "mongoose": "^8.8.4",
+    "nodemailer": "^6.9.16",
+    "uuid": "^11.0.3"
   }
 }

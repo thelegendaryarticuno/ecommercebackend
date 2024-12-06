@@ -2,12 +2,43 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const authRoutes = require('./routes/auth');
+const uuid = require('uuid'); 
 
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', // Frontend URL
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
 app.use(express.json());
+app.use(require('cookie-parser')());
+
+app.use(
+  session({
+    secret: "a57cb2f7c4a1ef3a8a3c6a5bf213d998812de8fc7bb47da8b7347a92f9ec48d9",
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/",
+      collectionName: 'sessions',
+    }),
+    cookie: {
+      secure: false,
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    },
+  })
+);
+
+// Routes
+app.use('/auth', authRoutes);
 
 // MongoDB Connection
 const uri = "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/";
@@ -24,7 +55,8 @@ const productSchema = new mongoose.Schema({
   price: String,
   img: String,
   category: String,
-  rating: Number
+  rating: Number,
+  productId: { type: String, unique: true } // Added productId field
 });
 
 const Product = mongoose.model('Product', productSchema);
@@ -75,7 +107,31 @@ app.get('/get-product', async (req, res) => {
   }
 });
 
-// Get Products with Generated IDs Route
+// Get Product by ID Route
+app.get('/product/:productId', async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const product = await Product.findById(productId);
+    
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      product
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false, 
+      message: 'Error fetching product',
+      error: error.message
+    });
+  }
+});
 
 // Complaints Schema
 const complaintsSchema = new mongoose.Schema({
@@ -201,6 +257,60 @@ app.post('/post-complaints', async (req, res) => {
       success: false,
       message: 'Error registering complaint',
       error: error.message
+    });
+  }
+});
+
+// Assign Product ID Route
+app.get('/assign-productid', async (req, res) => {
+  try {
+    // Find all products
+    const products = await Product.find();
+    
+    if (products.length === 0) {
+      return res.status(404).send('No products found to assign productIds.');
+    }
+
+    // Update each product to add a productId
+    const updatedProducts = [];
+    const usedIds = new Set(); // Track used IDs to ensure uniqueness
+
+    for (const product of products) {
+      let productId;
+      // Generate unique 6 digit number
+      do {
+        productId = Math.floor(100000 + Math.random() * 900000).toString();
+      } while (usedIds.has(productId));
+      
+      usedIds.add(productId);
+
+      const updateResult = await Product.findOneAndUpdate(
+        { _id: product._id },
+        { $set: { productId } },
+        { new: true }
+      );
+
+      if (updateResult) {
+        updatedProducts.push(updateResult);
+      } else {
+        console.error(`Failed to update product with ID: ${product._id}`);
+      }
+    }
+
+    // Save all updated products
+    await Promise.all(updatedProducts.map(product => product.save()));
+
+    res.status(200).json({
+      success: true,
+      message: 'Product IDs assigned successfully',
+      products: updatedProducts
+    });
+  } catch (err) {
+    console.error('Error during product ID assignment:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error assigning product IDs',
+      error: err.message
     });
   }
 });
