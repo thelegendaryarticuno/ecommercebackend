@@ -37,7 +37,6 @@ app.get('/keep-alive', (req, res) => {
   });
 });
 
-
 // Create Product Route
 app.post('/create-product', async (req, res) => {
   try {
@@ -58,6 +57,7 @@ app.post('/create-product', async (req, res) => {
     });
   }
 });
+
 // Get All Products Route
 app.get('/get-product', async (req, res) => {
   try {
@@ -74,8 +74,8 @@ app.get('/get-product', async (req, res) => {
     });
   }
 });
-// Get Products with Generated IDs Route
 
+// Get Products with Generated IDs Route
 
 // Complaints Schema
 const complaintsSchema = new mongoose.Schema({
@@ -94,10 +94,15 @@ const Complaint = mongoose.model('Complaint', complaintsSchema);
 
 // Configure nodemailer
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
   auth: {
     user: 'pecommerce8@gmail.com',
     pass: 'rqrdabxuzpaecigz'
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
@@ -105,45 +110,61 @@ const transporter = nodemailer.createTransport({
 const sendConfirmationEmail = async (email, complaintNumber, message) => {
   try {
     const mailOptions = {
-      from: 'pecommerce8@gmail.com',
-      to: email, // This will send to whatever email is passed in
+      from: '"Mera Bestie" <pecommerce8@gmail.com>',
+      to: email,
       subject: 'Complaint Registration Confirmation',
       html: `
         <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px; background-color: #ffffff;">
-  <!-- Stylish Header -->
-  <div style="background-color: #ffb6c1; padding: 15px; border-radius: 10px 10px 0 0; text-align: center;">
-    <h1 style="font-family: 'Brush Script MT', cursive; color: #ffffff; font-size: 36px; margin: 0;">Mera Bestie</h1>
-  </div>
-  
-  <!-- Main Content -->
-  <div style="padding: 20px;">
-    <h2 style="color: #2c3e50; margin-top: 0;">Complaint Registration Confirmation</h2>
-    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-      <p style="margin: 10px 0;"><strong>Complaint ID:</strong> ${complaintNumber}</p>
-      <p style="margin: 10px 0;"><strong>Issue Description:</strong></p>
-      <p style="margin: 10px 0; font-style: italic; color: #555;">${message}</p>
-    </div>
-    <p style="color: #7f8c8d; font-size: 16px; line-height: 1.5;">
-      Thank you for reaching out to us! Our experienced specialists are already working on resolving your issue. You can expect a detailed reply to your query within 24 hours. We appreciate your patience and understanding.
-    </p>
-  </div>
-  
-  <!-- Footer -->
-  <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
-    <p style="color: #95a5a6; font-size: 12px; line-height: 1.4;">
-      This is an automated email. Please do not reply to this message.<br>
-      If you have any additional questions, feel free to contact our support team.
-    </p>
-  </div>
-</div>
+          <!-- Stylish Header -->
+          <div style="background-color: #ffb6c1; padding: 15px; border-radius: 10px 10px 0 0; text-align: center;">
+            <h1 style="font-family: 'Brush Script MT', cursive; color: #ffffff; font-size: 36px; margin: 0;">Mera Bestie</h1>
+          </div>
+          
+          <!-- Main Content -->
+          <div style="padding: 20px;">
+            <h2 style="color: #2c3e50; margin-top: 0;">Complaint Registration Confirmation</h2>
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 10px 0;"><strong>Complaint ID:</strong> ${complaintNumber}</p>
+              <p style="margin: 10px 0;"><strong>Issue Description:</strong></p>
+              <p style="margin: 10px 0; font-style: italic; color: #555;">${message}</p>
+            </div>
+            <p style="color: #7f8c8d; font-size: 16px; line-height: 1.5;">
+              Thank you for reaching out to us! Our experienced specialists are already working on resolving your issue. You can expect a detailed reply to your query within 24 hours. We appreciate your patience and understanding.
+            </p>
+          </div>
+          
+          <!-- Footer -->
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+            <p style="color: #95a5a6; font-size: 12px; line-height: 1.4;">
+              This is an automated email. Please do not reply to this message.<br>
+              If you have any additional questions, feel free to contact our support team.
+            </p>
+          </div>
+        </div>
+      `,
+      text: `
+        Mera Bestie
 
+        Complaint Registration Confirmation
+
+        Complaint ID: ${complaintNumber}
+
+        Issue Description:
+        ${message}
+
+        Thank you for reaching out to us! Our experienced specialists are already working on resolving your issue. You can expect a detailed reply to your query within 24 hours. We appreciate your patience and understanding.
+
+        This is an automated email. Please do not reply to this message.
+        If you have any additional questions, feel free to contact our support team.
       `
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log('Confirmation email sent successfully');
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Confirmation email sent successfully:', info.response);
+    return info;
   } catch (error) {
     console.error('Error sending confirmation email:', error);
+    throw error;
   }
 };
 
@@ -158,7 +179,7 @@ app.post('/post-complaints', async (req, res) => {
     const complaintData = {
       complaintNumber,
       name,
-      email, 
+      email,
       message,
       userType
     };
