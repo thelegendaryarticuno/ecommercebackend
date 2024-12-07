@@ -56,7 +56,9 @@ const productSchema = new mongoose.Schema({
   img: String,
   category: String,
   rating: Number,
-  productId: { type: String, unique: true } // Added productId field
+  productId: { type: String, unique: true }, // Added productId field
+  inStockValue: Number, // Available stock value
+  soldStockValue: Number // Number of items sold
 });
 
 const Product = mongoose.model('Product', productSchema);
@@ -133,6 +135,44 @@ app.get('/product/:productId', async (req, res) => {
   }
 });
 
+// Update Stock Status Route
+app.post('/instock-update', async (req, res) => {
+  try {
+    const { productId, inStockValue, soldStockValue } = req.body;
+
+    // Find and update the product
+    const updatedProduct = await Product.findOneAndUpdate(
+      { productId: productId },
+      {
+        $set: {
+          inStockValue: inStockValue,
+          soldStockValue: soldStockValue
+        }
+      },
+      { new: true, upsert: false }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Stock status updated successfully',
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating stock status',
+      error: error.message
+    });
+  }
+});
+
 // Complaints Schema
 const complaintsSchema = new mongoose.Schema({
   complaintNumber: String,
@@ -140,6 +180,10 @@ const complaintsSchema = new mongoose.Schema({
   email: String,
   message: String,
   userType: String,
+  status: {
+    type: String,
+    default: 'Pending'
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -260,6 +304,57 @@ app.post('/post-complaints', async (req, res) => {
     });
   }
 });
+// Get All Complaints Route
+app.get('/get-complaints', async (req, res) => {
+  try {
+    const complaints = await Complaint.find();
+    
+    res.status(200).json({
+      success: true,
+      complaints
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching complaints',
+      error: error.message
+    });
+  }
+});
+
+// Update Complaint Status Route
+app.put('/update-complaint-status', async (req, res) => {
+  try {
+    const { complaintId, status } = req.body;
+
+    const updatedComplaint = await Complaint.findOneAndUpdate(
+      { complaintNumber: complaintId },
+      { $set: { status } },
+      { new: true }
+    );
+
+    if (!updatedComplaint) {
+      return res.status(404).json({
+        success: false,
+        message: 'Complaint not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Complaint status updated successfully',
+      complaint: updatedComplaint
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false, 
+      message: 'Error updating complaint status',
+      error: error.message
+    });
+  }
+});
 
 // Assign Product ID Route
 app.get('/assign-productid', async (req, res) => {
@@ -314,6 +409,397 @@ app.get('/assign-productid', async (req, res) => {
     });
   }
 });
+
+// Cart Schema
+const cartSchema = new mongoose.Schema({
+  userId: {
+    type: String,
+    required: true
+  },
+  productsInCart: [
+    {
+      productId: {
+        type: String,
+        required: true
+      },
+      productQty: {
+        type: Number,
+        required: true,
+        min: 1
+      }
+    }
+  ]
+});
+
+const Cart = mongoose.model('Cart', cartSchema);
+
+// Add to Cart Route
+app.post('/add-to-cart', async (req, res) => {
+  try {
+    const { userId, productId, quantity } = req.body;
+
+    // Find existing cart for user
+    let cart = await Cart.findOne({ userId });
+
+    if (cart) {
+      // Cart exists, append new product
+      cart.productsInCart.push({
+        productId: productId,
+        productQty: quantity
+      });
+    } else {
+      // Create new cart
+      cart = new Cart({
+        userId,
+        productsInCart: [{
+          productId: productId,
+          productQty: quantity
+        }]
+      });
+    }
+
+    // Save cart
+    const savedCart = await cart.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Product added to cart successfully',
+      cart: savedCart
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error adding product to cart',
+      error: error.message
+    });
+  }
+});
+
+// Get Cart by User ID Route
+app.get('/cart/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const cart = await Cart.findOne({ userId });
+
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cart not found for this user'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      cart: cart.productsInCart
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching cart',
+      error: error.message
+    });
+  }
+});
+// Delete Item from Cart Route
+app.delete('/delete-items', async (req, res) => {
+  try {
+    const { userId, productId } = req.body;
+    
+    // Find cart by userId
+    const cart = await Cart.findOne({ userId });
+    
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cart not found for this user'
+      });
+    }
+
+    // Filter out the product to be deleted
+    cart.productsInCart = cart.productsInCart.filter(
+      item => item.productId !== productId
+    );
+
+    // Save updated cart
+    const updatedCart = await cart.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Product removed from cart successfully',
+      cart: updatedCart
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error removing product from cart',
+      error: error.message
+    });
+  }
+});
+
+// Update Product Quantity in Cart Route
+app.put('/update-quantity', async (req, res) => {
+  try {
+    const { userId, productId, productQty } = req.body;
+    
+    // Find cart by userId
+    const cart = await Cart.findOne({ userId });
+    
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cart not found for this user'
+      });
+    }
+
+    // Find and update product quantity
+    const productIndex = cart.productsInCart.findIndex(
+      item => item.productId === productId
+    );
+
+    if (productIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found in cart'
+      });
+    }
+
+    cart.productsInCart[productIndex].productQty = productQty;
+
+    // Save updated cart
+    const updatedCart = await cart.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Product quantity updated successfully',
+      cart: updatedCart
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating product quantity',
+      error: error.message
+    });
+  }
+});
+
+// Address Schema
+const addressSchema = new mongoose.Schema({
+  userId: { type: String, unique: true },
+  address: String
+});
+
+const Address = mongoose.model('Address', addressSchema);
+
+// Update or Create Address Route
+app.post('/update-address', async (req, res) => {
+  try {
+    const { userId, address } = req.body;
+
+    // Try to find existing address for user
+    const existingAddress = await Address.findOne({ userId });
+
+    let result;
+    if (existingAddress) {
+      // Update existing address
+      existingAddress.address = address;
+      result = await existingAddress.save();
+    } else {
+      // Create new address entry
+      const newAddress = new Address({
+        userId,
+        address
+      });
+      result = await newAddress.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Address updated successfully',
+      address: result
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating address',
+      error: error.message
+    });
+  }
+});
+// Order Schema
+const orderSchema = new mongoose.Schema({
+  orderId: String,
+  date: String,
+  time: String,
+  address: String,
+  email: String,
+  name: String,
+  productIds: [String],
+  trackingId: String,
+  price: Number
+});
+
+const Order = mongoose.model('Order', orderSchema);
+
+// Place Order Route
+app.post('/place-order', async (req, res) => {
+  try {
+    const { userId, date, time, address, price, productsOrdered } = req.body;
+
+    // Generate random 6 digit orderId
+    const orderId = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Generate random 12 digit alphanumeric trackingId
+    const trackingId = Math.random().toString(36).substring(2, 14).toUpperCase();
+
+    // Find user details
+    const findUserDetails = async (userId) => {
+      // Use mongoose model directly instead of undefined User
+      const user = await mongoose.model('User').findOne({ userId });
+      if (!user) {
+        throw new Error('User not found');
+      }
+      return {
+        name: user.name,
+        email: user.email
+      };
+    };
+
+    // Extract product IDs
+    const getProductIds = (productsOrdered) => {
+      return productsOrdered.map(item => item.productId);
+    };
+
+    // Find product details
+    const productDetailsFinder = async (productIds) => {
+      const products = await Product.find({ productId: { $in: productIds } });
+      return products;
+    };
+
+    // Get user details
+    const userDetails = await findUserDetails(userId);
+    
+    // Get product IDs array
+    const productIds = getProductIds(productsOrdered);
+    
+    // Get product details
+    const productDetails = await productDetailsFinder(productIds);
+
+    // Create new order
+    const order = new Order({
+      orderId,
+      date,
+      time,
+      address,
+      email: userDetails.email,
+      name: userDetails.name,
+      productIds,
+      trackingId,
+      price
+    });
+
+    await order.save();
+
+    // Send confirmation email
+    const sendingMail = async () => {
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: pink; padding: 20px; text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #333; margin: 0;">Mera Bestie</h1>
+          </div>
+          
+          <h2 style="color: #333; text-align: center;">Order Confirmation</h2>
+          <p>Dear ${userDetails.name},</p>
+          <p>Thank you for your order! Your order has been successfully placed.</p>
+          
+          <div style="background-color: #f9f9f9; padding: 15px; margin: 20px 0; border-radius: 5px;">
+            <p><strong>Order ID:</strong> ${orderId}</p>
+            <p><strong>Tracking ID:</strong> ${trackingId}</p>
+            <p><strong>Date:</strong> ${date}</p>
+            <p><strong>Time:</strong> ${time}</p>
+            <p><strong>Delivery Address:</strong> ${address}</p>
+          </div>
+
+          <div style="margin-top: 20px; text-align: right;">
+            <p><strong>Total Amount:</strong> ₹${price}</p>
+          </div>
+
+          <p style="margin-top: 30px;">You can track your order using the tracking ID provided above.</p>
+          <p>If you have any questions, please don't hesitate to contact us.</p>
+          
+          <p style="margin-top: 30px;">Best regards,<br>Your Mera Bestie Team</p>
+        </div>
+      `;
+
+      await transporter.sendMail({
+        from: '"Mera Bestie Support" <pecommerce8@gmail.com>',
+        to: userDetails.email,
+        subject: `Order Confirmation - Order #${orderId}`,
+        html: emailHtml
+      });
+    };
+
+    await sendingMail();
+
+    res.status(200).json({
+      success: true,
+      message: 'Order placed successfully',
+      orderId,
+      trackingId
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error placing order',
+      error: error.message
+    });
+  }
+});
+
+// Get All Orders Route
+app.get('/get-orders', async (req, res) => {
+  try {
+    const orders = await Order.find();
+    
+    res.status(200).json({
+      success: true,
+      orders
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching orders',
+      error: error.message
+    });
+  }
+});
+
+// Get User Details Route
+app.get('/get-user', async (req, res) => {
+  try {
+    const users = await mongoose.model('User').find({}, 'userId name email');
+    
+    res.status(200).json({
+      success: true,
+      users
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user details',
+      error: error.message
+    });
+  }
+});
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
