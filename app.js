@@ -58,7 +58,8 @@ const productSchema = new mongoose.Schema({
   rating: Number,
   productId: { type: String, unique: true }, // Added productId field
   inStockValue: Number, // Available stock value
-  soldStockValue: Number // Number of items sold
+  soldStockValue: Number, // Number of items sold
+  visibility: { type: String, default: 'on' } // Visibility field with default 'on'
 });
 
 const Product = mongoose.model('Product', productSchema);
@@ -108,6 +109,41 @@ app.get('/get-product', async (req, res) => {
     });
   }
 });
+
+// Update Product Visibility Route
+app.put('/update-visibility', async (req, res) => {
+  try {
+    const { productId, visibility } = req.body;
+
+    // Find and update the product, creating visibility field if it doesn't exist
+    const updatedProduct = await Product.findOneAndUpdate(
+      { productId: productId },
+      { $set: { visibility: visibility } },
+      { new: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Product visibility updated successfully',
+      product: updatedProduct
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating product visibility',
+      error: error.message
+    });
+  }
+});
+
 
 // Get Product by ID Route
 app.get('/product/:productId', async (req, res) => {
