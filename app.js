@@ -144,7 +144,6 @@ app.put('/update-visibility', async (req, res) => {
   }
 });
 
-
 // Get Product by ID Route
 app.get('/product/:productId', async (req, res) => {
   try {
