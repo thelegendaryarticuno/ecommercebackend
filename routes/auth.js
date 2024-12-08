@@ -42,19 +42,33 @@ router.post('/signup', async (req, res) => {
       if (!isMatch) {
         return res.status(400).json({ error: 'Invalid email or password' });
       }
-  
-      // Save userId in session
-      req.session.userId = user.userId;
-  
-      // Respond with success
-      res.status(200).json({ message: 'Login successful', userId: user.userId });
+
+      // Check account status
+      if (user.accountStatus === 'suspended') {
+        return res.status(403).json({ error: 'Account is suspended' });
+      }
+
+      if (user.accountStatus === 'blocked') {
+        return res.status(403).json({ error: 'Account is blocked' });
+      }
+
+      // If account status is 'open', proceed with login
+      if (user.accountStatus === 'open') {
+        // Save userId in session
+        req.session.userId = user.userId;
+    
+        // Respond with success
+        return res.status(200).json({ message: 'Login successful', userId: user.userId });
+      }
+
+      // Handle any other unexpected account status
+      return res.status(400).json({ error: 'Invalid account status' });
+
     } catch (err) {
       console.error('Login error:', err);
       res.status(500).json({ error: 'Error logging in' });
     }
   });
-  
-  
 
 router.post('/logout', (req, res) => {
   req.session.destroy((err) => {
