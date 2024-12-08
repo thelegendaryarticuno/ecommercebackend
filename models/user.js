@@ -6,7 +6,8 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   password: { type: String, required: true },
   userId: { type: String, unique: true, required: true }, // Add unique userId
-  accountStatus: { type: String, default: 'open' } // Default account status
+  accountStatus: { type: String, default: 'open' }, // Default account status
+  phone: { type: String, default: 'not available' } // Phone number field with default value
 });
 
 // Hash password before saving

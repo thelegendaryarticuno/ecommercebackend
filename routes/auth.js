@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 
 router.post('/signup', async (req, res) => {
     try {
-      const { name, email, password } = req.body;
+      const { name, email, password, phone } = req.body;
   
       // Check if the user already exists
       const existingUser = await User.findOne({ email });
@@ -16,7 +16,7 @@ router.post('/signup', async (req, res) => {
   
       // Create a new user
       const userId = require('crypto').randomBytes(8).toString('hex'); // Generate unique user ID
-      const user = new User({ name, email, password, userId });
+      const user = new User({ name, email, password, userId, phone });
       await user.save();
   
       // Automatically log the user in
