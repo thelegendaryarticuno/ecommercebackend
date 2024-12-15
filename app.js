@@ -6,7 +6,6 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const authRoutes = require('./routes/auth');
 const uuid = require('uuid');
-const adminAuth = require('./routes/adminauth');
 const Seller = require('./models/seller');
 
 const app = express();
@@ -924,7 +923,10 @@ router.post('/seller/signup', async (req, res) => {
     });
 
   } catch (err) {
-    res.status(500).json({ error: 'Error registering seller' });
+    res.status(500).json({ 
+      error: 'Error registering seller',
+      message: err.message
+    });
   }
 });
 
