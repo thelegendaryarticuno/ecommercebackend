@@ -92,4 +92,120 @@ router.get('/user/:userId', async (req, res) => {
   });
   
 
+// Seller routes
+router.post('/seller/signup', async (req, res) => {
+  try {
+    const { phoneNumber, emailId, password, name, businessName, businessAddress, businessType } = req.body;
+
+    // Check if seller already exists
+    const existingSeller = await Seller.findOne({ email: emailId });
+    if (existingSeller) {
+      return res.status(400).json({ error: 'Seller already exists' });
+    }
+
+    // Generate unique seller ID (MBSLR + 5 digits)
+    let sellerId;
+    let isUnique = false;
+    while (!isUnique) {
+      const randomNum = Math.floor(10000 + Math.random() * 90000);
+      sellerId = `MBSLR${randomNum}`;
+      const existingId = await Seller.findOne({ sellerId });
+      if (!existingId) isUnique = true;
+    }
+
+    // Create new seller
+    const seller = new Seller({
+      name,
+      phoneNumber,
+      email: emailId,
+      password,
+      sellerId,
+      businessName,
+      businessAddress, 
+      businessType,
+      emailVerified: false,
+      phoneVerified: false
+    });
+
+    await seller.save();
+
+    // Store sellerId in session
+    req.session.sellerId = sellerId;
+
+    res.status(201).json({ 
+      message: 'Seller registered successfully',
+      sellerId 
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: 'Error registering seller' });
+  }
+});
+
+router.post('/seller/login', async (req, res) => {
+  try {
+    const { sellerId, emailOrPhone, password } = req.body;
+
+    // Find seller by ID and email/phone
+    const seller = await Seller.findOne({
+      sellerId,
+      $or: [
+        { email: emailOrPhone },
+        { phoneNumber: emailOrPhone }
+      ]
+    });
+
+    if (!seller) {
+      return res.status(400).json({ error: 'Invalid credentials' });
+    }
+
+    // Verify password
+    const isMatch = await bcrypt.compare(password, seller.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Invalid credentials' });
+    }
+
+    // Store sellerId in session
+    req.session.sellerId = sellerId;
+
+    res.status(200).json({ 
+      message: 'Login successful',
+      sellerId
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: 'Error logging in' });
+  }
+});
+
+router.post('/seller/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) return res.status(500).json({ error: 'Error logging out' });
+    res.clearCookie('connect.sid');
+    res.json({ message: 'Seller logout successful' });
+  });
+});
+
+router.get('/seller/:sellerId', async (req, res) => {
+  try {
+    const { sellerId } = req.params;
+    const seller = await Seller.findOne({ sellerId }, { 
+      name: 1,
+      businessName: 1,
+      businessAddress: 1,
+      businessType: 1,
+      _id: 0 
+    });
+    
+    if (!seller) {
+      return res.status(404).json({ error: 'Seller not found' });
+    }
+    
+    res.status(200).json(seller);
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching seller details' });
+  }
+});
+
+
 module.exports = router;
