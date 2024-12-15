@@ -974,31 +974,65 @@ app.post('/seller/verify-otp', async (req, res) => {
   try {
     const { otp, emailId } = req.body;
 
+    if (!otp || !emailId) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        details: {
+          otp: !otp ? 'OTP is required' : null,
+          emailId: !emailId ? 'Email ID is required' : null
+        }
+      });
+    }
+
     // Get seller and check OTP
-    const seller = await Seller.findOne({ emailId });
+    const seller = await Seller.findOne({ email: emailId });
     
     if (!seller) {
-      return res.status(400).json({ error: 'Seller not found' });
+      return res.status(400).json({ 
+        error: 'Seller not found',
+        details: `No seller found with email: ${emailId}`
+      });
+    }
+
+    if (!seller.otp) {
+      return res.status(400).json({
+        error: 'No OTP found',
+        details: 'OTP was not generated or has expired'
+      });
     }
 
     if (seller.otp !== otp) {
-      return res.status(400).json({ error: 'Invalid OTP' });
+      return res.status(400).json({
+        error: 'Invalid OTP',
+        details: 'The provided OTP does not match'
+      });
     }
 
     // Update verification status and clear OTP
-    await Seller.findOneAndUpdate(
-      { emailId },
-      { 
-        emailVerified: true,
-        phoneVerified: true,
-        otp: null
-      }
-    );
+    try {
+      await Seller.findOneAndUpdate(
+        { email: emailId },
+        { 
+          emailVerified: true,
+          phoneVerified: true,
+          otp: null
+        }
+      );
+    } catch (updateError) {
+      return res.status(500).json({
+        error: 'Database update failed',
+        details: updateError.message
+      });
+    }
 
     res.status(200).json({ message: 'OTP verified successfully' });
 
   } catch (error) {
-    res.status(500).json({ error: 'Error verifying OTP' });
+    res.status(500).json({ 
+      error: 'Error verifying OTP',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
