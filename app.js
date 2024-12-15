@@ -40,7 +40,6 @@ app.use(
 
 // Routes
 app.use('/auth', authRoutes);
-app.use('/adminauth', adminAuth);
 
 // MongoDB Connection
 const uri = "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/";
@@ -882,7 +881,7 @@ app.put('/update-account-status', async (req, res) => {
 const otpStore = new Map();
 
 // Signup Route
-router.post('/seller/signup', async (req, res) => {
+app.post('/seller/signup', async (req, res) => {
   try {
     const { phoneNumber, emailId, password } = req.body;
 
@@ -931,7 +930,7 @@ router.post('/seller/signup', async (req, res) => {
 });
 
 // Send OTP Route
-router.post('/seller/send-otp', async (req, res) => {
+app.post('/seller/send-otp', async (req, res) => {
   try {
     const { sellerId, emailId } = req.body;
 
@@ -975,7 +974,7 @@ router.post('/seller/send-otp', async (req, res) => {
 });
 
 // Verify OTP Route
-router.post('/seller/verify-otp', async (req, res) => {
+app.post('/seller/verify-otp', async (req, res) => {
   try {
     const { otp, email } = req.body;
 
@@ -1006,7 +1005,7 @@ router.post('/seller/verify-otp', async (req, res) => {
 });
 
 // Login Route
-router.post('/seller/login', async (req, res) => {
+app.post('/seller/login', async (req, res) => {
   try {
     const { sellerId, emailOrPhone, password } = req.body;
 
