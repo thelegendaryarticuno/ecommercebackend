@@ -941,8 +941,11 @@ app.post('/seller/send-otp', async (req, res) => {
     // Generate 6 digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Store OTP with email
-    otpStore.set(emailId, otp);
+    // Store OTP with email and timestamp
+    otpStore.set(emailId, {
+      otp,
+      timestamp: Date.now()
+    });
 
     // Send OTP email
     const mailOptions = {
@@ -953,7 +956,7 @@ app.post('/seller/send-otp', async (req, res) => {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2>Mera Bestie Seller Verification</h2>
           <p>Your verification OTP is: <strong>${otp}</strong></p>
-          <p>This OTP will expire in 10 minutes.</p>
+          <p>This OTP will expire in 3 minutes.</p>
         </div>
       `
     };
@@ -972,10 +975,24 @@ app.post('/seller/verify-otp', async (req, res) => {
   try {
     const { otp, email } = req.body;
 
-    // Get stored OTP
-    const storedOtp = otpStore.get(email);
+    // Get stored OTP data
+    const storedData = otpStore.get(email);
 
-    if (!storedOtp || storedOtp !== otp) {
+    if (!storedData) {
+      return res.status(400).json({ error: 'OTP expired or not found. Please request a new OTP.' });
+    }
+
+    const { otp: storedOtp, timestamp } = storedData;
+    const now = Date.now();
+    const otpAge = now - timestamp;
+    const OTP_EXPIRY = 3 * 60 * 1000; // 3 minutes in milliseconds
+
+    if (otpAge > OTP_EXPIRY) {
+      otpStore.delete(email);
+      return res.status(400).json({ error: 'OTP has expired. Please request a new OTP.' });
+    }
+
+    if (storedOtp !== otp) {
       return res.status(400).json({ error: 'Invalid OTP' });
     }
 
@@ -991,7 +1008,7 @@ app.post('/seller/verify-otp', async (req, res) => {
     // Clear OTP from store
     otpStore.delete(email);
 
-    res.status(200).json({ message: 'Valid OTP' });
+    res.status(200).json({ message: 'OTP verified successfully' });
 
   } catch (error) {
     res.status(500).json({ error: 'Error verifying OTP' });
