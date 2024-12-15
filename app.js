@@ -936,17 +936,7 @@ app.post('/seller/signup', async (req, res) => {
 // Send OTP Route
 app.post('/seller/send-otp', async (req, res) => {
   try {
-    const { sellerId, emailId } = req.body;
-
-    // Verify seller exists
-    const seller = await Seller.findOne({ 
-      sellerId,
-      email: emailId
-    });
-
-    if (!seller) {
-      return res.status(404).json({ error: 'Seller not found' });
-    }
+    const { emailId } = req.body;
 
     // Generate 6 digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
