@@ -901,14 +901,18 @@ app.post('/seller/signup', async (req, res) => {
       if (!existingId) isUnique = true;
     }
 
-    // Create new seller
+    // Create new seller with required fields from schema
     const seller = new Seller({
-      phone: phoneNumber,
+      name: 'Not Available',
       email: emailId,
-      password,
-      sellerId,
+      password: password,
+      sellerId: sellerId,
       emailVerified: false,
-      phoneVerified: false
+      phoneVerified: false,
+      phoneNumber: phoneNumber,
+      businessName: 'Not Available',
+      businessAddress: 'Not Available', 
+      businessType: 'Not Available'
     });
 
     await seller.save();
