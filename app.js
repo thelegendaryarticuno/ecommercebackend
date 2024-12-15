@@ -1073,6 +1073,18 @@ app.post('/seller/login', async (req, res) => {
   }
 });
 
+// Logout Route
+app.post('/seller/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error logging out' });
+    }
+    res.clearCookie('connect.sid');
+    res.json({ message: 'Seller logout successful' });
+  });
+});
+
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
