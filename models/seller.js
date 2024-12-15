@@ -12,7 +12,8 @@ const SellerSchema = new mongoose.Schema({
   businessName: { type: String, required: true },
   businessAddress: { type: String, required: true },
   businessType: { type: String, required: true },
-  otp: { type: String }
+  otp: { type: String },
+  loggedIn: { type: String, enum: ['loggedin', 'loggedout'], default: 'loggedout' }
 });
 
 // Hash password before saving

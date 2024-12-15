@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const uuid = require('uuid');
 const bcrypt = require('bcrypt'); // Added bcrypt import
 const Seller = require('./models/seller');
+const adminAuthRoutes = require('./routes/adminauth'); 
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(require('cookie-parser')());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
@@ -41,6 +43,7 @@ app.use(
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/api', adminAuthRoutes);
 
 // MongoDB Connection
 const uri = "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/";
@@ -1104,14 +1107,45 @@ app.post('/seller/login', async (req, res) => {
 });
 
 // Logout Route
-app.post('/seller/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error logging out' });
+app.post('/seller/logout', async (req, res) => {
+  try {
+    const { sellerId } = req.body;
+
+    if (!sellerId) {
+      return res.status(400).json({
+        error: 'Seller ID is required'
+      });
     }
-    res.clearCookie('connect.sid');
-    res.json({ message: 'Seller logout successful' });
-  });
+
+    const seller = await Seller.findOne({ sellerId });
+    
+    if (!seller) {
+      return res.status(404).json({
+        error: 'Seller not found'
+      });
+    }
+
+    seller.loggedIn = 'loggedout';
+    await seller.save();
+
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error logging out' });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ 
+        success: true,
+        message: 'Seller logged out successfully',
+        loggedIn: 'loggedout'
+      });
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: 'Error logging out',
+      details: error.message
+    });
+  }
 });
 // Coupon Schema
 const couponSchema = new mongoose.Schema({
@@ -1263,6 +1297,44 @@ app.delete('/delete-coupon', async (req, res) => {
     });
   }
 });
+
+// Verify Seller ID Route
+app.post('/verify-seller', async (req, res) => {
+  try {
+    const { sellerId } = req.body;
+
+    if (!sellerId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Seller ID is required'
+      });
+    }
+
+    // Find seller by sellerId
+    const seller = await Seller.findOne({ sellerId });
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        message: 'Invalid seller ID'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Valid seller ID',
+      loggedIn: seller.loggedIn
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error verifying seller ID',
+      error: error.message
+    });
+  }
+});
+
 
 
 const PORT = process.env.PORT || 5000;
