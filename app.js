@@ -1041,35 +1041,63 @@ app.post('/seller/login', async (req, res) => {
   try {
     const { sellerId, emailOrPhone, password } = req.body;
 
+    // Validate required fields
+    if (!sellerId || !emailOrPhone || !password) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        details: 'Seller ID, email/phone and password are required'
+      });
+    }
+
     // Find seller by ID and email/phone
     const seller = await Seller.findOne({
       sellerId,
       $or: [
         { email: emailOrPhone },
-        { phone: emailOrPhone }
+        { phoneNumber: emailOrPhone }
       ]
     });
 
     if (!seller) {
-      return res.status(400).json({ error: 'Invalid credentials' });
+      return res.status(400).json({ 
+        error: 'Invalid credentials',
+        details: 'No seller found with provided ID and email/phone'
+      });
+    }
+
+    // Check if email/phone is verified
+    if (!seller.emailVerified && !seller.phoneVerified) {
+      return res.status(401).json({
+        error: 'Account not verified',
+        details: 'Please verify your email or phone number before logging in'
+      });
     }
 
     // Verify password
     const isMatch = await bcrypt.compare(password, seller.password);
     if (!isMatch) {
-      return res.status(400).json({ error: 'Invalid credentials' });
+      return res.status(400).json({ 
+        error: 'Invalid credentials',
+        details: 'Incorrect password provided'
+      });
     }
 
     // Store sellerId in session
     req.session.sellerId = sellerId;
 
     res.status(200).json({ 
+      success: true,
       message: 'Login successful',
-      sellerId
+      sellerId,
+      businessName: seller.businessName
     });
 
   } catch (error) {
-    res.status(500).json({ error: 'Error logging in' });
+    res.status(500).json({ 
+      error: 'Error logging in',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
