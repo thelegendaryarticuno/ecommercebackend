@@ -972,10 +972,10 @@ app.post('/seller/send-otp', async (req, res) => {
 // Verify OTP Route
 app.post('/seller/verify-otp', async (req, res) => {
   try {
-    const { otp, email } = req.body;
+    const { otp, emailId } = req.body;
 
     // Get seller and check OTP
-    const seller = await Seller.findOne({ email });
+    const seller = await Seller.findOne({ emailId });
     
     if (!seller) {
       return res.status(400).json({ error: 'Seller not found' });
@@ -987,7 +987,7 @@ app.post('/seller/verify-otp', async (req, res) => {
 
     // Update verification status and clear OTP
     await Seller.findOneAndUpdate(
-      { email },
+      { emailId },
       { 
         emailVerified: true,
         phoneVerified: true,
