@@ -11,7 +11,8 @@ const SellerSchema = new mongoose.Schema({
   phoneNumber: { type: String, required: true },
   businessName: { type: String, required: true },
   businessAddress: { type: String, required: true },
-  businessType: { type: String, required: true }
+  businessType: { type: String, required: true },
+  otp: { type: String }
 });
 
 // Hash password before saving
