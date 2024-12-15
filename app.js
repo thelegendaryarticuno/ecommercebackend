@@ -920,6 +920,7 @@ app.post('/seller/signup', async (req, res) => {
 
     // Store sellerId in session
     req.session.sellerId = sellerId;
+    await req.session.save();
 
     res.status(201).json({ 
       message: 'Seller registered successfully',
