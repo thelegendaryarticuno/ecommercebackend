@@ -6,6 +6,7 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const authRoutes = require('./routes/auth');
 const uuid = require('uuid');
+const bcrypt = require('bcrypt'); // Added bcrypt import
 const Seller = require('./models/seller');
 
 const app = express();
