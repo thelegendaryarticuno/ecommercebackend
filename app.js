@@ -5,7 +5,8 @@ const nodemailer = require('nodemailer');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const authRoutes = require('./routes/auth');
-const uuid = require('uuid'); 
+const uuid = require('uuid');
+const adminAuth = require('./routes/adminauth');
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use(
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/adminauth', adminAuth);
 
 // MongoDB Connection
 const uri = "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/";
