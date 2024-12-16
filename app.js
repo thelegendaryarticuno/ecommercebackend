@@ -676,6 +676,7 @@ app.post('/update-address', async (req, res) => {
 // Order Schema
 const orderSchema = new mongoose.Schema({
   orderId: String,
+  userId: String,
   date: String,
   time: String,
   address: String,
@@ -731,9 +732,9 @@ app.post('/place-order', async (req, res) => {
     
     // Get product details
     const productDetails = await productDetailsFinder(productIds);
-
     // Create new order
     const order = new Order({
+      userId,
       orderId,
       date,
       time,
@@ -798,7 +799,7 @@ app.post('/place-order', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error placing order',
+      message: 'Error placing order', 
       error: error.message
     });
   }
@@ -1330,6 +1331,75 @@ app.post('/verify-seller', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error verifying seller ID',
+      error: error.message
+    });
+  }
+});
+// Find My Order Route
+app.post('/find-my-order', async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    // Find orders for this user
+    const orders = await Order.find({ userId });
+
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No orders found for this user'
+      });
+    }
+
+    // Function to get product details for each productId
+    const findProductDetails = async (productIds) => {
+      try {
+        const productDetails = [];
+        
+        // Make API calls for each productId
+        for (const productId of productIds) {
+          try {
+            const product = await Product.findById(productId);
+            if (product) {
+              productDetails.push(product);
+            }
+          } catch (err) {
+            console.error(`Error fetching product ${productId}:`, err);
+          }
+        }
+
+        return productDetails;
+      } catch (error) {
+        throw new Error('Error fetching product details: ' + error.message);
+      }
+    };
+
+    // Get product details for each order
+    const ordersWithProducts = await Promise.all(
+      orders.map(async (order) => {
+        const productDetails = await findProductDetails(order.productIds);
+        return {
+          ...order.toObject(),
+          products: productDetails
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      orders: ordersWithProducts
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error finding orders',
       error: error.message
     });
   }
