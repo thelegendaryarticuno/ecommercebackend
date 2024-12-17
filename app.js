@@ -151,6 +151,35 @@ app.put('/update-visibility', async (req, res) => {
   }
 });
 
+// Get Product by Product ID Route
+app.post('/:productId', async (req, res) => {
+  try {
+    const { productId } = req.body;
+
+    // Find product by productId
+    const product = await Product.findOne({ productId });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      product
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching product',
+      error: error.message
+    });
+  }
+});
+
+
 // Get Product by ID Route
 app.get('/product/:productId', async (req, res) => {
   try {
