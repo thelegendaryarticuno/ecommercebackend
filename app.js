@@ -10,7 +10,7 @@ const bcrypt = require('bcrypt'); // Added bcrypt import
 const Seller = require('./models/seller');
 const adminAuthRoutes = require('./routes/adminauth'); 
 const cartRoutes = require('./routes/cart');
-
+const complaintsRoutes = require('./routes/complaints');
 
 const app = express();
 
@@ -47,6 +47,7 @@ app.use(
 app.use('/auth', authRoutes);
 app.use('/api', adminAuthRoutes);
 app.use('/cart', cartRoutes);
+app.use('/complaints', complaintsRoutes);
 
 // MongoDB Connection
 const uri = "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/";
