@@ -83,6 +83,48 @@ app.get('/keep-alive', (req, res) => {
   });
 });
 
+// Get Products by Category Route
+app.post('/product/category', async (req, res) => {
+  try {
+    const { category } = req.body;
+    
+    // Normalize the category to handle case variations
+    let normalizedCategory = category.toLowerCase();
+    let searchCategory;
+
+    // Map normalized categories to their proper display versions
+    switch(normalizedCategory) {
+      case 'gift-boxes':
+      case 'gift boxes':
+        searchCategory = 'Gift Boxes';
+        break;
+      case 'books':
+        searchCategory = 'Books';
+         break;
+      case 'stationery':
+        searchCategory = 'Stationery';
+        break;
+      default:
+        searchCategory = category;
+    }
+    
+    const products = await Product.find({ category: searchCategory });
+
+    res.status(200).json({
+      success: true,
+      products
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching products by category',
+      error: error.message
+    });
+  }
+});
+
+
 // Create Product Route
 app.post('/create-product', async (req, res) => {
   try {
