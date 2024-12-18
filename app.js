@@ -487,19 +487,17 @@ const cartSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  productsInCart: [
-    {
-      productId: {
-        type: String,
-        required: true
-      },
-      productQty: {
-        type: Number,
-        required: true,
-        min: 1
-      }
+  productArray: [{
+    productId: {
+      type: String,
+      required: true
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1
     }
-  ]
+  }]
 });
 
 const Cart = mongoose.model('Cart', cartSchema);
@@ -513,39 +511,40 @@ app.post('/addtocart', async (req, res) => {
     let cart = await Cart.findOne({ userId });
 
     if (cart) {
-      // Cart exists, append new product
-      cart.productsInCart.push({
-        productId: productId,
-        productQty: quantity
+      // Cart exists, add product to existing cart
+      cart.productArray.push({
+        productId,
+        quantity
       });
+      await cart.save();
     } else {
       // Create new cart
       cart = new Cart({
         userId,
-        productsInCart: [{
-          productId: productId,
-          productQty: quantity
+        productArray: [{
+          productId,
+          quantity
         }]
       });
+      await cart.save();
     }
-
-    // Save cart
-    const savedCart = await cart.save();
 
     res.status(200).json({
       success: true,
       message: 'Product added to cart successfully',
-      cart: savedCart
+      cart
     });
 
   } catch (error) {
+    console.error('Error adding to cart:', error);
     res.status(500).json({
-      success: false,
+      success: false, 
       message: 'Error adding product to cart',
       error: error.message
     });
   }
 });
+
 
 // Get Cart by User ID Route
 app.get('/cart/:userId', async (req, res) => {
