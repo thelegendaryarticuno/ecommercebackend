@@ -505,7 +505,7 @@ const cartSchema = new mongoose.Schema({
 const Cart = mongoose.model('Cart', cartSchema);
 
 // Add to Cart Route
-app.post('/add-to-cart', async (req, res) => {
+app.post('/addtocart', async (req, res) => {
   try {
     const { userId, productId, quantity } = req.body;
 
