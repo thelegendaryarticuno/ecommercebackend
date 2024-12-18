@@ -435,10 +435,10 @@ app.post('/place-order', async (req, res) => {
     };
 
     // Find product details
-    const productDetailsFinder = async (productIds) => {
-      const products = await Product.find({ productId: { $in: productIds } });
-      return products;
-    };
+    // const productDetailsFinder = async (productIds) => {
+    //   const products = await Product.find({ productId: { $in: productIds } });
+    //   return products;
+    // };
 
     // Get user details
     const userDetails = await findUserDetails(userId);
@@ -447,7 +447,7 @@ app.post('/place-order', async (req, res) => {
     const productIds = getProductIds(productsOrdered);
     
     // Get product details
-    const productDetails = await productDetailsFinder(productIds);
+    // const productDetails = await productDetailsFinder(productIds);
     // Create new order
     const order = new Order({
       userId,
