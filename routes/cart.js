@@ -46,31 +46,32 @@ router.post('/addtocart', async (req, res) => {
 });
 
 // Get Cart by User ID Route
-router.get('/cart/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const cart = await Cart.findOne({ userId });
-
-    if (!cart) {
-      return res.status(404).json({
+router.post('/get-cart', async (req, res) => {
+    try {
+      const { userId } = req.body;
+      const cart = await Cart.findOne({ userId });
+  
+      if (!cart) {
+        return res.status(404).json({
+          success: false,
+          message: 'Cart not found for this user'
+        });
+      }
+  
+      res.status(200).json({
+        success: true,
+        cart
+      });
+  
+    } catch (error) {
+      res.status(500).json({
         success: false,
-        message: 'Cart not found for this user'
+        message: 'Error fetching cart',
+        error: error.message
       });
     }
-
-    res.status(200).json({
-      success: true,
-      cart: cart.productsInCart
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching cart',
-      error: error.message
-    });
-  }
-});
+  });
+  
 
 // Delete Item from Cart Route
 router.delete('/delete-items', async (req, res) => {
