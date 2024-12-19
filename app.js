@@ -11,6 +11,7 @@ const Seller = require('./models/seller');
 const adminAuthRoutes = require('./routes/adminauth'); 
 const cartRoutes = require('./routes/cart');
 const complaintsRoutes = require('./routes/complaints');
+const couponRoutes = require('./routes/coupon')
 
 const app = express();
 
@@ -45,9 +46,10 @@ app.use(
 
 // Routes
 app.use('/auth', authRoutes);
-app.use('/api', adminAuthRoutes);
+app.use('/admin', adminAuthRoutes);
 app.use('/cart', cartRoutes);
 app.use('/complaints', complaintsRoutes);
+app.use('/coupon',couponRoutes)
 
 // MongoDB Connection
 const uri = "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/";
@@ -825,235 +827,6 @@ app.post('/seller/login', async (req, res) => {
   }
 });
 
-// Logout Route
-app.post('/seller/logout', async (req, res) => {
-  try {
-    const { sellerId } = req.body;
-
-    if (!sellerId) {
-      return res.status(400).json({
-        error: 'Seller ID is required'
-      });
-    }
-
-    const seller = await Seller.findOne({ sellerId });
-    
-    if (!seller) {
-      return res.status(404).json({
-        error: 'Seller not found'
-      });
-    }
-
-    seller.loggedIn = 'loggedout';
-    await seller.save();
-
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ error: 'Error logging out' });
-      }
-      res.clearCookie('connect.sid');
-      res.json({ 
-        success: true,
-        message: 'Seller logged out successfully',
-        loggedIn: 'loggedout'
-      });
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      error: 'Error logging out',
-      details: error.message
-    });
-  }
-});
-// Coupon Schema
-const couponSchema = new mongoose.Schema({
-  code: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  discountPercentage: {
-    type: Number,
-    required: true
-  }
-});
-
-const Coupon = mongoose.model('Coupon', couponSchema);
-
-// Function to send email to all users
-async function sendEmailToAllUsers(subject, message) {
-  try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'pecommerce8@gmail.com', // Replace with your email
-        pass: 'rqrdabxuzpaecigz' // Replace with your password
-      }
-    });
-
-    const users = await mongoose.model('User').find({}, 'email');
-    
-    for (const user of users) {
-      await transporter.sendMail({
-        from: 'pecommerce8@gmail.com',
-        to: user.email,
-        subject: subject,
-        text: message
-      });
-    }
-  } catch (error) {
-    console.error('Error sending emails:', error);
-  }
-}
-
-// Get all coupons route
-app.get('/coupon', async (req, res) => {
-  try {
-    const coupons = await Coupon.find();
-    res.status(200).json({
-      success: true,
-      coupons
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching coupons',
-      error: error.message
-    });
-  }
-});
-
-// Save coupon route
-app.post('/save-coupon', async (req, res) => {
-  try {
-    const { code, discountPercentage } = req.body;
-
-    const coupon = new Coupon({
-      code,
-      discountPercentage
-    });
-
-    await coupon.save();
-
-    // Send email to all users about new coupon
-    const subject = 'New Coupon Available!';
-    const message = `A new coupon ${code} is now available with ${discountPercentage}% discount. Use it in your next purchase!`;
-    await sendEmailToAllUsers(subject, message);
-
-    res.status(201).json({
-      success: true,
-      message: 'Coupon saved successfully',
-      coupon
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error saving coupon',
-      error: error.message
-    });
-  }
-});
-
-// Verify coupon route
-app.post('/verify-coupon', async (req, res) => {
-  try {
-    const { code } = req.body;
-    
-    const coupon = await Coupon.findOne({ code });
-    
-    if (!coupon) {
-      return res.status(404).json({
-        success: false,
-        message: 'Invalid coupon code'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      discountPercentage: coupon.discountPercentage
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error verifying coupon',
-      error: error.message
-    });
-  }
-});
-
-// Delete coupon route
-app.delete('/delete-coupon', async (req, res) => {
-  try {
-    const { code, discountPercentage } = req.body;
-    
-    const deletedCoupon = await Coupon.findOneAndDelete({ 
-      code,
-      discountPercentage 
-    });
-
-    if (!deletedCoupon) {
-      return res.status(404).json({
-        success: false,
-        message: 'Coupon not found'
-      });
-    }
-
-    // Send email to all users about expired coupon
-    const subject = 'Coupon Expired';
-    const message = `The coupon ${code} with ${discountPercentage}% discount has expired.`;
-    await sendEmailToAllUsers(subject, message);
-
-    res.status(200).json({
-      success: true,
-      message: 'Coupon deleted successfully'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error deleting coupon',
-      error: error.message
-    });
-  }
-});
-
-// Verify Seller ID Route
-app.post('/verify-seller', async (req, res) => {
-  try {
-    const { sellerId } = req.body;
-
-    if (!sellerId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Seller ID is required'
-      });
-    }
-
-    // Find seller by sellerId
-    const seller = await Seller.findOne({ sellerId });
-
-    if (!seller) {
-      return res.status(404).json({
-        success: false,
-        message: 'Invalid seller ID'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Valid seller ID',
-      loggedIn: seller.loggedIn
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error verifying seller ID',
-      error: error.message
-    });
-  }
-});
-// Find My Order Route
 app.post('/find-my-order', async (req, res) => {
   try {
     const { userId } = req.body;

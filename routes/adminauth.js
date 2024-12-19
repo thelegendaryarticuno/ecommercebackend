@@ -4,7 +4,7 @@ const Seller = require('../models/seller'); // Adjust the path to your Seller sc
 const router = express.Router();
 
 // Seller Login
-router.post('/seller/login', async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { sellerId, emailOrPhone, password } = req.body;
 
@@ -114,6 +114,83 @@ router.post('/seller/signup', async (req, res) => {
     res.status(500).json({
       error: 'Error registering seller',
       message: err.message
+    });
+  }
+});
+
+router.post('/verify-seller', async (req, res) => {
+  try {
+    const { sellerId } = req.body;
+
+    if (!sellerId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Seller ID is required'
+      });
+    }
+
+    // Find seller by sellerId
+    const seller = await Seller.findOne({ sellerId });
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        message: 'Invalid seller ID'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Valid seller ID',
+      loggedIn: seller.loggedIn
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error verifying seller ID',
+      error: error.message
+    });
+  }
+});
+
+router.post('/logout', async (req, res) => {
+  try {
+    const { sellerId } = req.body;
+
+    if (!sellerId) {
+      return res.status(400).json({
+        error: 'Seller ID is required'
+      });
+    }
+
+    const seller = await Seller.findOne({ sellerId });
+    
+    if (!seller) {
+      return res.status(404).json({
+        error: 'Seller not found'
+      });
+    }
+
+    seller.loggedIn = 'loggedout';
+    await seller.save();
+
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error logging out' });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ 
+        success: true,
+        message: 'Seller logged out successfully',
+        loggedIn: 'loggedout'
+      });
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: 'Error logging out',
+      details: error.message
     });
   }
 });
