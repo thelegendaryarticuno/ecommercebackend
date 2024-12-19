@@ -83,16 +83,16 @@ router.post('/delete-items', async (req, res) => {
 
 // Route to update quantity
 router.post('/update-quantity', async (req, res) => {
-  const { userId, productId, quantity } = req.body;
+  const { userId, productId, productQty } = req.body;
 
-  if (!userId || !productId || typeof quantity !== 'number') {
-    return res.status(400).json({ message: 'userId, productId, and a valid quantity are required.' });
+  if (!userId || !productId || typeof productQty !== 'number') {
+    return res.status(400).json({ message: 'userId, productId, and a valid productQty are required.' });
   }
 
   try {
     const result = await Cart.updateOne(
       { userId, 'productsInCart.productId': productId },
-      { $set: { 'productsInCart.$.productQty': quantity } }
+      { $set: { 'productsInCart.$.productQty': productQty } }
     );
 
     if (result.modifiedCount > 0) {
