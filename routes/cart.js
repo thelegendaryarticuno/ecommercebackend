@@ -57,55 +57,54 @@ router.post('/get-cart', async (req, res) => {
 });
 
 // Delete Item from Cart Route
-router.delete('/delete-items', async (req, res) => {
+router.post('/delete-items', async (req, res) => {
+  const { userId, productId } = req.body;
+
+  if (!userId || !productId) {
+    return res.status(400).json({ message: 'userId and productId are required.' });
+  }
+
   try {
-    const { userId, productId } = req.body;
+    const result = await Cart.updateOne(
+      { userId },
+      { $pull: { productsInCart: { productId } } }
+    );
 
-    const cart = await Cart.findOne({ userId });
-    if (!cart) {
-      return res.status(404).json({ success: false, message: 'Cart not found for this user' });
+    if (result.modifiedCount > 0) {
+      res.status(200).json({ message: 'Item deleted successfully.' });
+    } else {
+      res.status(404).json({ message: 'Item not found in the cart.' });
     }
-
-    // Match productId as a field
-    cart.productsInCart = cart.productsInCart.filter(item => item.productId !== productId);
-
-    const updatedCart = await cart.save();
-
-    res.status(200).json({ success: true, message: 'Product removed from cart successfully', cart: updatedCart });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error removing product from cart', error: error.message });
+    console.error('Error deleting item:', error);
+    res.status(500).json({ message: 'An error occurred while deleting the item.' });
   }
 });
 
+// Route to update quantity
+router.post('/update-quantity', async (req, res) => {
+  const { userId, productId, quantity } = req.body;
 
-// Update Product Quantity in Cart Route
-router.put('/update-quantity', async (req, res) => {
+  if (!userId || !productId || typeof quantity !== 'number') {
+    return res.status(400).json({ message: 'userId, productId, and a valid quantity are required.' });
+  }
+
   try {
-    const { userId, productId, quantity } = req.body;
+    const result = await Cart.updateOne(
+      { userId, 'productsInCart.productId': productId },
+      { $set: { 'productsInCart.$.productQty': quantity } }
+    );
 
-    const cart = await Cart.findOne({ userId });
-    if (!cart) {
-      return res.status(404).json({ success: false, message: 'Cart not found for this user' });
+    if (result.modifiedCount > 0) {
+      res.status(200).json({ message: 'Quantity updated successfully.' });
+    } else {
+      res.status(404).json({ message: 'Product not found in the cart.' });
     }
-
-    // Match productId as a field, assuming it's stored as a string
-    const productIndex = cart.productsInCart.findIndex(item => item.productId === productId);
-
-    if (productIndex === -1) {
-      return res.status(404).json({ success: false, message: 'Product not found in cart' });
-    }
-
-    // Update the quantity
-    cart.productsInCart[productIndex].quantity = quantity;
-
-    const updatedCart = await cart.save();
-
-    res.status(200).json({ success: true, message: 'Product quantity updated successfully', cart: updatedCart });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error updating product quantity', error: error.message });
+    console.error('Error updating quantity:', error);
+    res.status(500).json({ message: 'An error occurred while updating the quantity.' });
   }
 });
-
 // Place Order Route
 router.post('/place-order', async (req, res) => {
   try {
