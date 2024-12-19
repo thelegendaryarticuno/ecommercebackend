@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Coupon = require('../models/couponmodel');
 const nodemailer = require('nodemailer');
+const mongoose = require('mongoose');
+const User = require('../models/usermodel'); // Adjust the path to your actual User model file
+
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -18,26 +21,21 @@ const transporter = nodemailer.createTransport({
 
 async function sendEmailToAllUsers(subject, message) {
     try {
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: 'pecommerce8@gmail.com', // Replace with your email
-          pass: 'rqrdabxuzpaecigz' // Replace with your password
+        const users = await User.find({}, 'email'); // Fetch user emails
+        for (const user of users) {
+            try {
+                await transporter.sendMail({
+                    from: 'pecommerce8@gmail.com',
+                    to: user.email,
+                    subject: subject,
+                    text: message
+                });
+            } catch (emailError) {
+                console.error(`Error sending email to ${user.email}:`, emailError);
+            }
         }
-      });
-  
-      const users = await mongoose.model('User').find({}, 'email');
-      
-      for (const user of users) {
-        await transporter.sendMail({
-          from: 'pecommerce8@gmail.com',
-          to: user.email,
-          subject: subject,
-          text: message
-        });
-      }
     } catch (error) {
-      console.error('Error sending emails:', error);
+        console.error('Error fetching users or sending emails:', error);
     }
   }
   
