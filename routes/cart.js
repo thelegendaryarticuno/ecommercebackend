@@ -56,6 +56,35 @@ router.post('/get-cart', async (req, res) => {
   }
 });
 
+router.put('/update-quantity', async (req, res) => {
+  const { userId, productId, productQty } = req.body;
+
+  if (!userId || !productId || typeof productQty !== 'number') {
+    return res.status(400).json({ message: 'userId, productId, and a valid productQty are required.' });
+  }
+
+  try {
+    const cart = await Cart.findOne({ userId });
+
+    if (!cart) {
+      return res.status(404).json({ message: 'Cart not found.' });
+    }
+
+    const product = cart.productsInCart.find(item => item.productId === productId);
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found in the cart.' });
+    }
+
+    product.productQty = productQty;
+    await cart.save();
+
+    res.status(200).json({ message: 'Quantity updated successfully.' });
+  } catch (error) {
+    console.error('Error updating quantity:', error);
+    res.status(500).json({ message: 'An error occurred while updating the quantity.' });
+  }
+});
 // Delete Item from Cart Route
 router.post('/delete-items', async (req, res) => {
   const { userId, productId } = req.body;
@@ -82,29 +111,7 @@ router.post('/delete-items', async (req, res) => {
 });
 
 // Route to update quantity
-router.post('/update-quantity', async (req, res) => {
-  const { userId, productId, productQty } = req.body;
 
-  if (!userId || !productId || typeof productQty !== 'number') {
-    return res.status(400).json({ message: 'userId, productId, and a valid productQty are required.' });
-  }
-
-  try {
-    const result = await Cart.updateOne(
-      { userId, 'productsInCart.productId': productId },
-      { $set: { 'productsInCart.$.productQty': productQty } }
-    );
-
-    if (result.modifiedCount > 0) {
-      res.status(200).json({ message: 'Quantity updated successfully.' });
-    } else {
-      res.status(404).json({ message: 'Product not found in the cart.' });
-    }
-  } catch (error) {
-    console.error('Error updating quantity:', error);
-    res.status(500).json({ message: 'An error occurred while updating the quantity.' });
-  }
-});
 // Place Order Route
 router.post('/place-order', async (req, res) => {
   try {
