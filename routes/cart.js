@@ -62,11 +62,12 @@ router.delete('/delete-items', async (req, res) => {
     const { userId, productId } = req.body;
 
     const cart = await Cart.findOne({ userId });
-    if (!cart) return res.status(404).json({ success: false, message: 'Cart not found for this user' });
+    if (!cart) {
+      return res.status(404).json({ success: false, message: 'Cart not found for this user' });
+    }
 
-    cart.productsInCart = cart.productsInCart.filter(
-      item => !mongoose.Types.ObjectId(item.productId).equals(productId)
-    );
+    // Match productId as a field
+    cart.productsInCart = cart.productsInCart.filter(item => item.productId !== productId);
 
     const updatedCart = await cart.save();
 
@@ -76,19 +77,25 @@ router.delete('/delete-items', async (req, res) => {
   }
 });
 
+
 // Update Product Quantity in Cart Route
 router.put('/update-quantity', async (req, res) => {
   try {
     const { userId, productId, quantity } = req.body;
 
     const cart = await Cart.findOne({ userId });
-    if (!cart) return res.status(404).json({ success: false, message: 'Cart not found for this user' });
+    if (!cart) {
+      return res.status(404).json({ success: false, message: 'Cart not found for this user' });
+    }
 
-    const productIndex = cart.productsInCart.findIndex(
-      item => mongoose.Types.ObjectId(item.productId).equals(productId)
-    );
-    if (productIndex === -1) return res.status(404).json({ success: false, message: 'Product not found in cart' });
+    // Match productId as a field, assuming it's stored as a string
+    const productIndex = cart.productsInCart.findIndex(item => item.productId === productId);
 
+    if (productIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Product not found in cart' });
+    }
+
+    // Update the quantity
     cart.productsInCart[productIndex].quantity = quantity;
 
     const updatedCart = await cart.save();
