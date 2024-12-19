@@ -3,7 +3,7 @@ const router = express.Router();
 const Coupon = require('../models/couponmodel');
 const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
-const User = require('../models/usermodel'); // Adjust the path to your actual User model file
+const User = require('../models/user'); // Adjust the path to your actual User model file
 
 
 const transporter = nodemailer.createTransport({
