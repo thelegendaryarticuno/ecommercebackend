@@ -4,15 +4,15 @@ const Coupon = require('../models/couponmodel');
 const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
 const User = require('../models/user'); // Adjust the path to your actual User model file
-
+require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: process.env.SMTP_SECURE === 'true', // Convert string to boolean
   auth: {
-    user: 'pecommerce8@gmail.com',
-    pass: 'rqrdabxuzpaecigz'
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   },
   tls: {
     rejectUnauthorized: false
