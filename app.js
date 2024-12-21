@@ -239,20 +239,26 @@ app.get('/product/:productId', async (req, res) => {
 });
 
 // Update Stock Status Route
-app.post('/instock-update', async (req, res) => {
+app.put('/instock-update', async (req, res) => {
   try {
-    const { productId, inStockValue, soldStockValue } = req.body;
+    const { productId, price, name, category, inStockValue, soldStockValue } = req.body;
+
+    // Debugging log
+    console.log('Received body:', req.body);
 
     // Find and update the product
     const updatedProduct = await Product.findOneAndUpdate(
-      { productId: productId },
+      { productId: productId }, // Match by productId
       {
         $set: {
+          name: name,
+          price: price,
+          category: category,
           inStockValue: inStockValue,
           soldStockValue: soldStockValue
         }
       },
-      { new: true, upsert: false }
+      { new: true, upsert: false } // Return the updated document
     );
 
     if (!updatedProduct) {
@@ -265,9 +271,11 @@ app.post('/instock-update', async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Stock status updated successfully',
+      product: updatedProduct // Include updated product in response for verification
     });
 
   } catch (error) {
+    console.error('Error updating stock status:', error.message); // Log the error
     res.status(500).json({
       success: false,
       message: 'Error updating stock status',
