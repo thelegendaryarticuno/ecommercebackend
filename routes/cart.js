@@ -28,9 +28,10 @@ router.post('/addtocart', async (req, res) => {
     const { userId, productId, quantity } = req.body;
 
     let cart = await Cart.findOne({ userId });
+    const productQty = parseInt(quantity);
 
     if (cart) {
-      cart.productsInCart.push({ productId, quantity });
+      cart.productsInCart.push({ productId, productQty });
       await cart.save();
     } else {
       cart = new Cart({ userId, productsInCart: [{ productId, quantity }] });
