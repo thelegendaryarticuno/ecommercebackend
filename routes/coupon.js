@@ -68,16 +68,16 @@ async function sendEmailToAllUsers(subject, message) {
   
       await coupon.save();
   
-      // Send email to all users about new coupon
-      const subject = 'New Coupon Available!';
-      const message = `A new coupon ${code} is now available with ${discountPercentage}% discount. Use it in your next purchase!`;
-      await sendEmailToAllUsers(subject, message);
-  
       res.status(201).json({
         success: true,
         message: 'Coupon saved successfully',
         coupon
       });
+  
+      // Send email to all users about new coupon
+      const subject = 'New Coupon Available!';
+      const message = `A new coupon ${code} is now available with ${discountPercentage}% discount. Use it in your next purchase!`;
+      await sendEmailToAllUsers(subject, message);
     } catch (error) {
       res.status(500).json({
         success: false,

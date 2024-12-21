@@ -13,13 +13,14 @@ const cartRoutes = require('./routes/cart');
 const complaintsRoutes = require('./routes/complaints');
 const couponRoutes = require('./routes/coupon')
 const Product = require('./models/product');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: [' http://localhost:5173', 'http://localhost:3000','https://merabestie-orpin.vercel.app','https://merabestie-khaki.vercel.app','https://merabestie.com','https://hosteecommerce.vercel.app'], // Frontend URLs
+  origin: ['http://localhost:3000','https://merabestie.com','https://hosteecommerce.vercel.app'], 
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -31,11 +32,11 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
-    secret: "a57cb2f7c4a1ef3a8a3c6a5bf213d998812de8fc7bb47da8b7347a92f9ec48d9",
+    secret: crypto.randomBytes(64).toString('hex'),
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-      mongoUrl: "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/",
+      mongoUrl: process.env.MONGO_URI,
       collectionName: 'sessions',
     }),
     cookie: {
