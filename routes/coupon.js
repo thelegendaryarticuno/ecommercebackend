@@ -38,6 +38,25 @@ async function sendEmailToAllUsers(subject, message) {
         console.error('Error fetching users or sending emails:', error);
     }
   }
+
+
+// List Coupons Route
+router.get('/list-coupons', async (req, res) => {
+  try {
+    const coupons = await Coupon.find();
+    res.status(200).json({
+      success: true,
+      coupons
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching coupons',
+      error: error.message
+    });
+  }
+});
+
   
   // Get all coupons route
   router.get('/get-coupon', async (req, res) => {
