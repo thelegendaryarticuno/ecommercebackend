@@ -8,7 +8,8 @@ const productSchema = new mongoose.Schema({
   productId: { type: String, unique: true }, // Added productId field
   inStockValue: Number, // Available stock value
   soldStockValue: Number, // Number of items sold
-  visibility: { type: String, default: 'on' } // Visibility field with default 'on'
+  visibility: { type: String, default: 'on' }, // Visibility field with default 'on'
+  description: { type: String, required: false } // Detailed description of the product
 });
 
 const Product = mongoose.model('Product', productSchema);
