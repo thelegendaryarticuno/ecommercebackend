@@ -7,7 +7,8 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true },
   userId: { type: String, unique: true, required: true }, // Add unique userId
   accountStatus: { type: String, default: 'open' }, // Default account status
-  phone: { type: String, default: 'not available' } // Phone number field with default value
+  phone: { type: String, default: 'not available' }, // Phone number field with default value
+  role: { type: String, enum: ['admin', 'seller', 'customer'], default: 'customer' } // Role field
 });
 
 // Hash password before saving
