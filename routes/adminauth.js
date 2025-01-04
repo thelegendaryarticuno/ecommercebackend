@@ -33,12 +33,12 @@ router.post('/login', async (req, res) => {
     }
 
     // Check if email/phone is verified
-    if (!seller.emailVerified && !seller.phoneVerified) {
-      return res.status(401).json({
-        error: 'Account not verified',
-        details: 'Please verify your email or phone number before logging in'
-      });
-    }
+    // if (!seller.emailVerified && !seller.phoneVerified) {
+    //   return res.status(401).json({
+    //     error: 'Account not verified',
+    //     details: 'Please verify your email or phone number before logging in'
+    //   });
+    // }
 
     // Verify password
     const isMatch = await bcrypt.compare(password, seller.password);

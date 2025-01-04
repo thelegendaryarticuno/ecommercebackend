@@ -12,6 +12,7 @@ const adminAuthRoutes = require('./routes/adminauth');
 const cartRoutes = require('./routes/cart');
 const complaintsRoutes = require('./routes/complaints');
 const couponRoutes = require('./routes/coupon')
+const imageRoutes = require("./routes/image")
 const Product = require('./models/product');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -53,6 +54,7 @@ app.use('/admin', adminAuthRoutes);
 app.use('/cart', cartRoutes);
 app.use('/complaints', complaintsRoutes);
 app.use('/coupon',couponRoutes)
+app.use('/image',imageRoutes)
 
 // MongoDB Connection
 const uri = "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/";
@@ -114,6 +116,7 @@ app.post('/product/category', async (req, res) => {
 // Create Product Route
 app.post('/create-product', async (req, res) => {
   try {
+    
     const productData = req.body;
     const product = new Product(productData);
     const result = await product.save();
