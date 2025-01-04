@@ -4,6 +4,7 @@ const productSchema = new mongoose.Schema({
   price: String,
   img: String,
   category: String,
+  description: String,
   rating: Number,
   productId: { type: String, unique: true }, // Added productId field
   inStockValue: Number, // Available stock value
