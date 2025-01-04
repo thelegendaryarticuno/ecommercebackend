@@ -132,6 +132,7 @@ app.post('/create-product', async (req, res) => {
   }
 });
 
+//delete complete product
 app.post('/delete-product', async (req, res) => {
   try {
     const { productId } = req.body;
