@@ -36,7 +36,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-      mongoUrl: process.env.MONGO_URI,
+      mongoUrl: "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/",
       collectionName: 'sessions',
     }),
     cookie: {
@@ -55,7 +55,7 @@ app.use('/complaints', complaintsRoutes);
 app.use('/coupon',couponRoutes)
 
 // MongoDB Connection
-const uri = process.env.MONGO_URI;
+const uri = "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/";
 mongoose.connect(uri)
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('MongoDB connection error:', err));
@@ -127,6 +127,35 @@ app.post('/create-product', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error creating product',
+      error: error.message
+    });
+  }
+});
+
+app.post('/delete-product', async (req, res) => {
+  try {
+    const { productId } = req.body;
+
+     // Find product by productId
+     const product = await Product.findOne({ productId });
+
+     if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+    const response = await Product.deleteOne({productId})
+    if(response.deletedCount===1&&response.acknowledged===true)
+      return res.status(200).json({
+        success: true,
+        message: 'Product deleted successfully',
+      });
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting product',
       error: error.message
     });
   }
@@ -547,7 +576,7 @@ app.post('/find-my-order', async (req, res) => {
 
 
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
