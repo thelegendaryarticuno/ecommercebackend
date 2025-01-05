@@ -276,7 +276,7 @@ app.get('/product/:productId', async (req, res) => {
 // Update Stock Status Route
 app.put('/instock-update', async (req, res) => {
   try {
-    const { productId, price, name, category, inStockValue, soldStockValue } = req.body;
+    const { productId, price, img, name, category, inStockValue, soldStockValue } = req.body;
     // Find and update the product
     const updatedProduct = await Product.findOneAndUpdate(
       { productId: productId }, // Match by productId
@@ -284,6 +284,7 @@ app.put('/instock-update', async (req, res) => {
         $set: {
           name: name,
           price: price,
+          img: img,
           category: category,
           inStockValue: inStockValue,
           soldStockValue: soldStockValue
