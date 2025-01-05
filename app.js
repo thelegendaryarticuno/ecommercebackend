@@ -14,6 +14,7 @@ const complaintsRoutes = require('./routes/complaints');
 const couponRoutes = require('./routes/coupon');
 const imageRoutes = require("./routes/image");
 const reviewsRoutes = require('./routes/reviews');
+const SEOroutes = require('./routes/seo');
 const Product = require('./models/product');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -57,6 +58,7 @@ app.use('/complaints', complaintsRoutes);
 app.use('/coupon',couponRoutes)
 app.use('/image',imageRoutes)
 app.use('/reviews', reviewsRoutes);
+app.use('/seo', SEOroutes);
 
 // MongoDB Connection
 const uri = "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/";
