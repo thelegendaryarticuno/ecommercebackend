@@ -11,8 +11,9 @@ const Seller = require('./models/seller');
 const adminAuthRoutes = require('./routes/adminauth'); 
 const cartRoutes = require('./routes/cart');
 const complaintsRoutes = require('./routes/complaints');
-const couponRoutes = require('./routes/coupon')
-const imageRoutes = require("./routes/image")
+const couponRoutes = require('./routes/coupon');
+const imageRoutes = require("./routes/image");
+const reviewsRoutes = require('./routes/reviews');
 const Product = require('./models/product');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -21,7 +22,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000','https://merabestie.com','https://merabestie-eosin.vercel.app','https://merabestie-five.vercel.app'], 
+  origin: ['http://localhost:3000','https://merabestie.com','https://merabestie-five.vercel.app'], 
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -55,6 +56,7 @@ app.use('/cart', cartRoutes);
 app.use('/complaints', complaintsRoutes);
 app.use('/coupon',couponRoutes)
 app.use('/image',imageRoutes)
+app.use('/reviews', reviewsRoutes);
 
 // MongoDB Connection
 const uri = "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/";
