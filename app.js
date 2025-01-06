@@ -17,6 +17,7 @@ const reviewsRoutes = require('./routes/reviews');
 const SEOroutes = require('./routes/seo');
 const Product = require('./models/product');
 const crypto = require('crypto');
+const otpRoutes = require('./routes/otp');
 require('dotenv').config();
 
 const app = express();
@@ -59,6 +60,7 @@ app.use('/coupon',couponRoutes)
 app.use('/image',imageRoutes)
 app.use('/reviews', reviewsRoutes);
 app.use('/seo', SEOroutes);
+app.use('/otp', otpRoutes);
 
 // MongoDB Connection
 const uri = "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/";
@@ -585,7 +587,7 @@ app.post('/find-my-order', async (req, res) => {
 
 
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
