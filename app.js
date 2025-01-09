@@ -18,6 +18,7 @@ const SEOroutes = require('./routes/seo');
 const Product = require('./models/product');
 const crypto = require('crypto');
 const otpRoutes = require('./routes/otp');
+const orderRoutes = require('./routes/orders');
 require('dotenv').config();
 
 const app = express();
@@ -61,6 +62,7 @@ app.use('/image',imageRoutes)
 app.use('/reviews', reviewsRoutes);
 app.use('/seo', SEOroutes);
 app.use('/otp', otpRoutes);
+app.use('/orders', orderRoutes);
 
 // MongoDB Connection
 const uri = "mongodb+srv://ecommerce:ecommerce@ecommerce.dunf0.mongodb.net/";
