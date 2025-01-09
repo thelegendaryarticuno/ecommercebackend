@@ -33,7 +33,7 @@ router.post('/create-order', async (req, res) => {
         const { amount, currency, userId } = req.body;
 
         const razorpayOrder = await razorpay.orders.create({
-            amount: amount, // Amount in paise (e.g., 50000 for ₹500)
+            amount: amount, 
             currency: currency || 'INR',
             notes: { user: userId }
         });
@@ -69,7 +69,38 @@ router.post('/verify-payment', async (req, res) => {
 // 3. Place Order
 router.post('/place-order', async (req, res) => {
     try {
-        const { userId, customerName, customerPhone, customerEmail, shippingAddress, products, totalAmount, paymentMethod, razorpayDetails } = req.body;
+        const {
+            userId,
+            address, // Full address string
+            price,
+            productsOrdered,
+            status = "Processing", // Default status
+            paymentStatus = "Paid" // Default payment status
+        } = req.body;
+
+        // Default payment method
+        const paymentMethod = "Prepaid";
+
+        // Check if userId is provided
+        if (!userId) {
+            return res.status(400).json({ success: false, message: 'userId is required' });
+        }
+
+        // Fetch user details from User schema
+        const user = await User.findOne({ userId });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Parse the full address string into individual components
+        const [street, city, state, pincode, phone] = address.split(',').map(item => item.trim());
+        const shippingAddress = {
+            street,
+            city,
+            state,
+            country: "India", // Assuming default country as India
+            postalCode: pincode
+        };
 
         // Generate unique internal orderId
         const orderId = `ORDER-${Date.now()}`;
@@ -78,19 +109,24 @@ router.post('/place-order', async (req, res) => {
         const order = new Orders({
             orderId,
             userId,
-            customerName,
-            customerPhone,
-            customerEmail,
+            customerName: user.name,
+            customerPhone: phone || user.phone,
+            customerEmail: user.email,
             shippingAddress,
-            products,
-            totalAmount,
+            products: productsOrdered.map(item => ({
+                productId: item.productId,
+                quantity: item.productQty
+            })),
+            totalAmount: price,
             paymentMethod,
-            razorpayDetails: paymentMethod === "Prepaid" ? razorpayDetails : null
+            razorpayDetails: null, // Since payment method is default Prepaid
+            status,
+            paymentStatus
         });
 
         const savedOrder = await order.save();
 
-        // If COD, create order in Shiprocket immediately
+        // If COD (for future functionality), create Shiprocket order immediately
         if (paymentMethod === "COD") {
             const token = await authenticateShiprocket();
 
@@ -98,23 +134,23 @@ router.post('/place-order', async (req, res) => {
                 order_id: savedOrder.orderId,
                 order_date: new Date().toISOString(),
                 pickup_location: "Default Pickup",
-                billing_customer_name: customerName,
-                billing_address: shippingAddress.address,
+                billing_customer_name: user.name,
+                billing_address: shippingAddress.street,
                 billing_city: shippingAddress.city,
                 billing_pincode: shippingAddress.postalCode,
                 billing_state: shippingAddress.state,
                 billing_country: shippingAddress.country,
-                billing_email: customerEmail,
-                billing_phone: customerPhone,
+                billing_email: user.email,
+                billing_phone: shippingAddress.phone || user.phone,
                 shipping_is_billing: true,
-                order_items: products.map(item => ({
-                    name: item.name,
+                order_items: productsOrdered.map(item => ({
+                    name: item.name || "Product", // Replace with product name if available
                     sku: item.productId,
-                    units: item.quantity,
-                    selling_price: item.price
+                    units: item.productQty,
+                    selling_price: price // Replace with actual price per product if available
                 })),
                 payment_method: "COD",
-                sub_total: totalAmount
+                sub_total: price
             };
 
             const shiprocketResponse = await axios.post(
@@ -135,9 +171,10 @@ router.post('/place-order', async (req, res) => {
         res.status(201).json({ success: true, message: 'Order placed successfully', order: savedOrder });
     } catch (error) {
         console.error('Error placing order:', error);
-        res.status(500).json({ error: 'Failed to place order' });
+        res.status(500).json({ success: false, error: 'Failed to place order', details: error.message });
     }
 });
+
 
 // 4. Cancel Order
 router.post('/cancel-order', async (req, res) => {
