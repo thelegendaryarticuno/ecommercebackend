@@ -7,6 +7,8 @@ const User = require('../models/user'); // Replace with correct path
 const Product = require('../models/product'); // Replace with correct path
 const nodemailer = require('nodemailer');
 const Razorpay = require('razorpay');
+const crypto = require('crypto');
+
 
 require('dotenv').config();
 
