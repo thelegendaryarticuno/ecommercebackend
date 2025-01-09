@@ -4,7 +4,8 @@ const axios = require('axios');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
 const Orders = require('../models/orderModel'); // Replace with the correct path
-const User = require('../models/user'); // Replace with correct path
+const User = require('../models/user'); // Replace with the correct path
+const Product = require('../models/product'); // Replace with the correct path for the Product model
 
 require('dotenv').config();
 
@@ -95,12 +96,34 @@ router.post('/place-order', async (req, res) => {
         // Parse the full address string into individual components
         const [street, city, state, pincode, phone] = address.split(',').map(item => item.trim());
         const shippingAddress = {
-            street,
+            address: street, // Combine parsed address into one
             city,
             state,
-            country: "India", // Assuming default country as India
+            country: "India", // Default country
             postalCode: pincode
         };
+
+        // Fetch product details if required
+        const products = await Promise.all(productsOrdered.map(async (item) => {
+            // Fetch product details if `name` or `price` is missing
+            let productName = item.name || "Product";
+            let productPrice = item.price || 0;
+
+            if (!item.name || !item.price) {
+                const productDetails = await Product.findById(item.productId);
+                if (productDetails) {
+                    productName = productDetails.name;
+                    productPrice = productDetails.price;
+                }
+            }
+
+            return {
+                productId: item.productId,
+                name: productName,
+                price: productPrice,
+                quantity: item.productQty
+            };
+        }));
 
         // Generate unique internal orderId
         const orderId = `ORDER-${Date.now()}`;
@@ -113,10 +136,7 @@ router.post('/place-order', async (req, res) => {
             customerPhone: phone || user.phone,
             customerEmail: user.email,
             shippingAddress,
-            products: productsOrdered.map(item => ({
-                productId: item.productId,
-                quantity: item.productQty
-            })),
+            products, // Use fixed product details
             totalAmount: price,
             paymentMethod,
             razorpayDetails: null, // Since payment method is default Prepaid
@@ -135,19 +155,19 @@ router.post('/place-order', async (req, res) => {
                 order_date: new Date().toISOString(),
                 pickup_location: "Default Pickup",
                 billing_customer_name: user.name,
-                billing_address: shippingAddress.street,
+                billing_address: shippingAddress.address,
                 billing_city: shippingAddress.city,
                 billing_pincode: shippingAddress.postalCode,
                 billing_state: shippingAddress.state,
                 billing_country: shippingAddress.country,
                 billing_email: user.email,
-                billing_phone: shippingAddress.phone || user.phone,
+                billing_phone: phone || user.phone,
                 shipping_is_billing: true,
-                order_items: productsOrdered.map(item => ({
-                    name: item.name || "Product", // Replace with product name if available
+                order_items: products.map(item => ({
+                    name: item.name,
                     sku: item.productId,
-                    units: item.productQty,
-                    selling_price: price // Replace with actual price per product if available
+                    units: item.quantity,
+                    selling_price: item.price
                 })),
                 payment_method: "COD",
                 sub_total: price
@@ -174,7 +194,6 @@ router.post('/place-order', async (req, res) => {
         res.status(500).json({ success: false, error: 'Failed to place order', details: error.message });
     }
 });
-
 
 // 4. Cancel Order
 router.post('/cancel-order', async (req, res) => {
