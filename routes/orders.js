@@ -195,7 +195,23 @@ router.post('/place-order', async (req, res) => {
     }
 });
 
-// 4. Cancel Order
+// 4. Export Orders
+router.get('/export-orders', async (req, res) => {
+    try {
+        const token = await authenticateShiprocket();
+
+        const response = await axios.get('https://apiv2.shiprocket.in/v1/external/orders/processing', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        res.status(200).json({ success: true, orders: response.data });
+    } catch (error) {
+        console.error('Error exporting orders:', error);
+        res.status(500).json({ success: false, error: 'Failed to export orders', details: error.message });
+    }
+});
+
+// Cancel Order Route
 router.post('/cancel-order', async (req, res) => {
     try {
         const { orderId } = req.body;
