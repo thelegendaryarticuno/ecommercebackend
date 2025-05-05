@@ -105,7 +105,6 @@ router.post('/place-order', async (req, res) => {
 
         // Fetch product details if required
         const products = await Promise.all(productsOrdered.map(async (item) => {
-            // Fetch product details if `name` or `price` is missing
             let productName = item.name || "Product";
             let productPrice = item.price || 0;
 
@@ -147,7 +146,7 @@ router.post('/place-order', async (req, res) => {
         const savedOrder = await order.save();
 
         // If COD (for future functionality), create Shiprocket order immediately
-        if (paymentMethod === "COD") {
+        if (paymentMethod === "Prepaid") {
             const token = await authenticateShiprocket();
 
             const shiprocketPayload = {
@@ -172,12 +171,14 @@ router.post('/place-order', async (req, res) => {
                 payment_method: "COD",
                 sub_total: price
             };
+            console.log(token, shiprocketPayload);
 
             const shiprocketResponse = await axios.post(
                 'https://apiv2.shiprocket.in/v1/external/orders/create/adhoc',
                 shiprocketPayload,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
+            console.log(shiprocketResponse.data);
 
             // Update Shiprocket details in order
             savedOrder.shiprocketDetails = {
